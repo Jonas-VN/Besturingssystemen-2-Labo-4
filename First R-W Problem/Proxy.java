@@ -7,7 +7,7 @@ public class Proxy
 {
     private static Proxy instance = null;
     private static int readerCount = 0;
-    private static Semaphore readSemaphore = new Semaphore(1);
+    private static Semaphore readerCountProtection = new Semaphore(1);
     private static Semaphore writerSemaphore = new Semaphore(1);
 
 
@@ -27,12 +27,12 @@ public class Proxy
     {
         // TODO: synchronization before read goes here
         try {
-            readSemaphore.acquire();
+            readerCountProtection.acquire();
             readerCount++;
             if (readerCount == 1) writerSemaphore.acquire();
         } catch (InterruptedException ignored) {
         } finally {
-            readSemaphore.release();
+            readerCountProtection.release();
         }
 
     }
@@ -41,12 +41,12 @@ public class Proxy
     {
         // TODO: synchronization after read goes here
         try {
-            readSemaphore.acquire();
+            readerCountProtection.acquire();
             readerCount--;
             if (readerCount == 0) writerSemaphore.release();
         } catch (InterruptedException ignored) {
         } finally {
-            readSemaphore.release();
+            readerCountProtection.release();
         }
     }
 
