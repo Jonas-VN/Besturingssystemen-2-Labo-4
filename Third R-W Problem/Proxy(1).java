@@ -8,9 +8,9 @@ import java.util.concurrent.Semaphore;
 public class Proxy {
     private static Proxy instance = null;
 
-    Semaphore mutex = new Semaphore(1);
-    Semaphore rmutex = new Semaphore(10);
-    Semaphore wmutex = new Semaphore(1);
+    Semaphore ordermutex = new Semaphore(1);
+    Semaphore rmutex = new Semaphore(1);
+    Semaphore accessmutex = new Semaphore(1);
     int readerCount = 0;
 
     private Proxy() {
@@ -26,11 +26,12 @@ public class Proxy {
     public void preRead(int pid) {
         // TODO: synchronization before read goes here
         try {
-            mutex.acquire();
+            ordermutex.acquire();
             rmutex.acquire();
+            if (readerCount == 0) accessmutex.acquire();
             readerCount++;
-            if (readerCount == 1) wmutex.acquire();
-            mutex.release();
+
+            ordermutex.release();
             rmutex.release();
 
         } catch (InterruptedException e) {
@@ -43,9 +44,8 @@ public class Proxy {
         try {
             rmutex.acquire();
             readerCount--;
-            if (readerCount == 0) wmutex.release();
+            if (readerCount == 0) accessmutex.release();
             rmutex.release();
-            //mutex.release();
         } catch (InterruptedException e) {
             System.out.println(e.getMessage());
         }
@@ -54,9 +54,9 @@ public class Proxy {
     public void preWrite(int pid) {
         // TODO: synchronization before write goes here
         try {
-            mutex.acquire();
-            wmutex.acquire();
-            /* mutex.release();*/
+            ordermutex.acquire();
+            accessmutex.acquire();
+            ordermutex.release();
         } catch (InterruptedException e) {
             System.out.println(e.getMessage());
         }
@@ -65,7 +65,6 @@ public class Proxy {
 
     public void postWrite(int pid) {
         // TODO: synchronization after write goes here
-        mutex.release();
-        wmutex.release();
+        accessmutex.release();
     }
 }
