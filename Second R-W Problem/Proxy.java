@@ -2,12 +2,11 @@ package lab4;
 
 
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class Proxy
 {
     private static Proxy instance = null;
-    private static final AtomicInteger readerCount = new AtomicInteger(0);
+    private static int readerCount = 0;
     private static final Semaphore mutex = new Semaphore(1);
     private static final Semaphore readSemaphore = new Semaphore(1);
     private static final Semaphore writerSemaphore = new Semaphore(1);
@@ -31,8 +30,8 @@ public class Proxy
         try {
             mutex.acquire();
             readSemaphore.acquire();
-            readerCount.incrementAndGet();
-            if (readerCount.get() == 1) writerSemaphore.acquire();
+            readerCount++;
+            if (readerCount == 1) writerSemaphore.acquire();
         } catch (InterruptedException ignored) {
         }
     }
@@ -40,8 +39,8 @@ public class Proxy
     public void postRead(int pid)
     {
         // TODO: synchronization after read goes here
-        readerCount.decrementAndGet();
-        if (readerCount.get() == 0) writerSemaphore.release();
+        readerCount--;
+        if (readerCount == 0) writerSemaphore.release();
         readSemaphore.release();
         mutex.release();
     }
