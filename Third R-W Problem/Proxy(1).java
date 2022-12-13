@@ -28,12 +28,12 @@ public class Proxy {
     public void preRead(int pid) {
         // TODO: synchronization before read goes here
         try {
-            //mutex.acquire();
+            mutex.acquire();
             rmutex.acquire();
-          //  readerCount++;
+            readerCount++;
             readers.incrementAndGet();
-           /* if (readerCount == 1) */wmutex.acquire();
-            //mutex.release();
+            if (readerCount == 1) wmutex.acquire();
+            mutex.release();
             rmutex.release();
 
         } catch (InterruptedException e) {
@@ -45,11 +45,11 @@ public class Proxy {
         // TODO: synchronization after read goes here
         try {
             rmutex.acquire();
-            //readerCount--;
+            readerCount--;
             readers.getAndDecrement();
-          /*  if (readerCount == 0)*/ wmutex.release();
+            if (readerCount == 0) wmutex.release();
             rmutex.release();
-            //mutex.release();
+            mutex.release();
         } catch (InterruptedException e) {
             System.out.println(e.getMessage());
         }
@@ -58,9 +58,9 @@ public class Proxy {
     public void preWrite(int pid) {
         // TODO: synchronization before write goes here
         try {
-           // mutex.acquire();
+            mutex.acquire();
             wmutex.acquire();
-           /* mutex.release();*/
+            mutex.release();
         } catch (InterruptedException e) {
             System.out.println(e.getMessage());
         }
@@ -69,7 +69,7 @@ public class Proxy {
 
     public void postWrite(int pid) {
         // TODO: synchronization after write goes here
-       // mutex.release();
+        mutex.release();
         wmutex.release();
     }
 }
