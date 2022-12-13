@@ -1,16 +1,21 @@
 package lab4;
 
 
+import java.util.concurrent.Semaphore;
+
 public class Proxy
 {
     private static Proxy instance = null;
-    private int readers = 0;
-    private int writers = 0;
-    private int requestedWriters = 0;
+    private static int readerCount = 0;
+    private static final Semaphore mutex = new Semaphore(1);
+    private static final Semaphore readerCountProtection = new Semaphore(1);
+    private static final Semaphore readSemaphore = new Semaphore(1);
+    private static final Semaphore writerSemaphore = new Semaphore(1);
+
 
     private Proxy()
     {
-        
+
     }
 
     public static synchronized Proxy getInstance()
@@ -20,43 +25,51 @@ public class Proxy
         return instance;
     }
 
-    private void Wait() {
+    public void preRead(int pid)
+    {
+        // TODO: synchronization before read goes here
         try {
-            wait();
+            mutex.acquire();
+            readSemaphore.acquire();
+            readerCountProtection.acquire();
+            readerCount++;
+            if (readerCount == 1) writerSemaphore.acquire();
+        } catch (InterruptedException ignored) {
+        } finally {
+            readerCountProtection.release();
+        }
+
+    }
+
+    public void postRead(int pid)
+    {
+        // TODO: synchronization after read goes here
+        try {
+            readerCountProtection.acquire();
+            readerCount--;
+            if (readerCount == 0) writerSemaphore.release();
+        } catch (InterruptedException ignored) {
+        } finally {
+            readerCountProtection.release();
+            readSemaphore.release();
+            mutex.release();
+        }
+    }
+
+    public void preWrite(int pid) {
+
+        // TODO: synchronization before write goes here
+        try {
+            readSemaphore.acquire();
+            writerSemaphore.acquire();
         } catch (InterruptedException ignored) {
         }
     }
 
-    public synchronized void preRead(int pid)
-    {
-        // TODO: synchronization before read goes here
-        while (writers > 0 || requestedWriters > 0)
-            Wait();
-        readers++;
-    }
-
-    public synchronized void postRead(int pid)
-    {
-        // TODO: synchronization after read goes here
-        readers--;
-        notifyAll();
-    }
-
-    public synchronized void preWrite(int pid) {
-
-        // TODO: synchronization before write goes here
-        requestedWriters++;
-        while (readers > 0 || writers > 0) {
-            Wait();
-        }
-        requestedWriters--;
-        writers++;
-    }
-
-    public synchronized void postWrite(int pid)
+    public void postWrite(int pid)
     {
         // TODO: synchronization after write goes here
-        writers--;
-        notifyAll();
+        writerSemaphore.release();
+        readSemaphore.release();
     }
 }
