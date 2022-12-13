@@ -2,7 +2,7 @@ package lab4;
 
 
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicInteger;
+
 
 
 public class Proxy {
@@ -12,8 +12,6 @@ public class Proxy {
     Semaphore rmutex = new Semaphore(10);
     Semaphore wmutex = new Semaphore(1);
     int readerCount = 0;
-
-    AtomicInteger readers;
 
     private Proxy() {
     }
@@ -31,7 +29,6 @@ public class Proxy {
             mutex.acquire();
             rmutex.acquire();
             readerCount++;
-            readers.incrementAndGet();
             if (readerCount == 1) wmutex.acquire();
             mutex.release();
             rmutex.release();
@@ -46,10 +43,9 @@ public class Proxy {
         try {
             rmutex.acquire();
             readerCount--;
-            readers.getAndDecrement();
             if (readerCount == 0) wmutex.release();
             rmutex.release();
-            mutex.release();
+            //mutex.release();
         } catch (InterruptedException e) {
             System.out.println(e.getMessage());
         }
@@ -60,7 +56,7 @@ public class Proxy {
         try {
             mutex.acquire();
             wmutex.acquire();
-            mutex.release();
+            /* mutex.release();*/
         } catch (InterruptedException e) {
             System.out.println(e.getMessage());
         }
